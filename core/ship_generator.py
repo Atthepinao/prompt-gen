@@ -1,15 +1,23 @@
-"""Spaceship (full vessel) prompt generator.
+"""Spaceship (full vessel) prompt generator — Nano Banana / Gemini-tuned rewrite.
 
 Generates a 2x2 four-view reference sheet prompt for a complete spaceship of a
-given archetype (fighter / corvette / frigate / cruiser / battleship / carrier /
-freighter / industrial). Reuses ComponentGenerator's layout / view helpers but
-overrides the art style with a 1985-1995 Japanese mecha OVA capital-ship
-aesthetic, and injects two universal directives (three-act composition + surface
-detail density) that drive the difference between a "toy block" and a real
-capital-ship illustration.
+given archetype, in the visual idiom of late-1980s to mid-1990s Japanese mecha
+OVA capital-ship illustration.
 
-Carrier archetype is the only class that exposes a modular mecha hangar bay,
-which keeps the rest of the fleet decoupled from the mecha system.
+This rewrite (April 2026) follows the prompt-engineering findings collected in
+``nanobanana_ship_prompt_research.md``:
+
+  * Narrative prose, not tag soup or uppercase directive blocks.
+  * Subject + medium + designer is loaded into the FIRST paragraph so the
+    high-weight first-50-words window carries the visual anchor.
+  * The whole prompt sits in the 200-400 word sweet spot.
+  * No "NEGATIVE" / "FORBIDDEN" / "NEVER" sections — Nano Banana ignores
+    negative prompts and tends to invert them. Everything is phrased as
+    positive description (what the picture IS, not what it isn't).
+  * Designer NAMES are kept (they are useful style anchors) but specific
+    work titles are dropped to reduce safety-system / copyright friction.
+  * Carrier directive is folded inline as positive description when the
+    archetype carries mecha — no separate anti-flat-deck negative block.
 """
 import json
 import logging
@@ -153,123 +161,106 @@ def _variant_descriptor(variation_id: Optional[str]) -> str:
     return v.get("descriptor", "") if v else ""
 
 
-# --- Carrier directives (single source of truth) ---
+# --- Carrier inline directive (positive description, no negatives) ---
+#
+# Kept as a single short positive sentence so it can be inlined into the
+# silhouette paragraph when ``carries_mecha`` is true. The old version was a
+# multi-paragraph "DO NOT DRAW A FLAT FLIGHT DECK" block which Nano Banana
+# tended to invert.
 
-_CARRIER_DIRECTIVE = (
-    "CARRIER CONFIGURATION (critical silhouette directive): "
-    "vertically-thick armored hull oriented along its long axis. The forward third "
-    "splits into a wide longitudinal launch channel running fore-to-aft along the "
-    "centerline, exiting face-first out the bow opening. Two outboard hangar sponsons "
-    "run parallel along the flanks as modular bolted-on extensions. The dorsal command "
-    "block is a low-profile stepped armored structure integrated FLUSH into the dorsal "
-    "spine amidships with horizontal viewport bands — NOT a separate tower, NOT shaped "
-    "like an animal or human face. The rear is an armored aft engine block — a thick "
-    "armored mounting plate housing multiple large thruster bells partially recessed "
-    "into the armor, with internal framework only glimpsed through armor cutouts and "
-    "access panels (NOT an exposed scaffolding rig). Do NOT draw any piloted machines "
-    "inside or around the ship — only the carrier infrastructure itself."
-)
-
-_CARRIER_NEGATIVE = (
-    "**ANTI-FLAT-DECK CARRIER NEGATIVE (CRITICAL):**\n"
-    "This vessel must NOT take the form of a horizontally-flat carrier platform. Forbidden:\n"
-    "- NO flat horizontal top deck, NO angled landing deck, NO ski-jump bow\n"
-    "- NO arrestor wires, NO catapult tracks running across a top deck surface\n"
-    "- NO offset 'island' superstructure perched on the edge of a flat deck\n"
-    "- NO aircraft, jets, planes, helicopters, or piloted machines parked on a top surface\n"
-    "- NO vehicles launched from above — all launches exit FORWARD out the bow\n"
-    "- NO command tower shaped like an animal or human head/face"
+_CARRIER_INLINE = (
+    "The vessel is a space carrier whose forward third opens into a wide "
+    "longitudinal launch channel running fore-to-aft along the centerline, "
+    "exiting face-first out of the bow opening, with outboard hangar sponsons "
+    "running parallel along the flanks; the dorsal command block is a low "
+    "stepped armored structure integrated flush into the dorsal spine, with "
+    "horizontal viewport bands."
 )
 
 
-# --- Universal capital-ship directives ---
+# --- Prose templates ---
 
-_THREE_ACT_COMPOSITION = (
-    "THREE-ACT MECHA-DESIGN COMPOSITION (mandatory — this is the load-bearing "
-    "structural rule for capital-class vessels):\n"
-    "The hull MUST read as three clearly differentiated longitudinal acts along "
-    "its long axis, NOT as a single uniform extruded block and NOT as a smooth "
-    "tapered cigar shape. Each act must be visually distinct from its neighbors "
-    "in silhouette, surface treatment, and detail vocabulary.\n"
-    "  Act 1 — FORWARD ATTACK MODULE (front third): an aggressive, visually "
-    "pointed, splayed, or chisel-faced prow carrying the heaviest concentration "
-    "of weapons, sensors, or launch infrastructure. This act sets the vessel's "
-    "'face' and must be the most directional element of the silhouette.\n"
-    "  Act 2 — CENTRAL COMMAND CITADEL (middle third): a vertically-stacked, "
-    "multi-tier armored superstructure that is visually denser and taller than "
-    "the bow or stern, bristling with antenna masts, sensor dishes, and "
-    "secondary turrets. This act sets the vessel's 'character' and is the "
-    "primary visual focal point.\n"
-    "  Act 3 — ARMORED AFT ENGINE BLOCK (back third): a thick armored mounting "
-    "plate housing multiple large thruster bells, with the bells PARTIALLY "
-    "RECESSED into the armor (NOT hung off open girders, NOT mounted on naked "
-    "trusses). Internal structural framework, conduit runs, and engine "
-    "greebling are PARTIALLY VISIBLE through armor cutouts, access panels, "
-    "and inspection windows — they are glimpsed THROUGH the armor, never "
-    "fully exposed on the outside. This act must read as a fortified armored "
-    "engine module that conveys raw mechanical power — NOT as an open "
-    "scaffolding rig, NOT as an oil-derrick framework, NOT as exposed steel "
-    "trusswork."
+# These are crafted to be read as natural prose by Nano Banana / Gemini, not
+# parsed as bullet lists. Each variable is interpolated into a paragraph
+# rather than appended as a separate uppercase section.
+
+_MEDIUM_LINE = (
+    "Hand-painted Japanese mecha OVA cel artwork in the visual tradition of "
+    "late-1980s to mid-1990s capital-ship illustration."
 )
 
-_SURFACE_DENSITY_DIRECTIVE = (
-    "SURFACE DETAIL DENSITY (mandatory — this is what separates a capital-ship "
-    "illustration from a toy mockup):\n"
-    "  - HUNDREDS of small lighted viewports, portholes, and access hatches "
-    "scattered densely across the entire hull surface. Each viewport must be "
-    "sized as a human-scale crew port — they act as the implicit scale "
-    "reference that makes the vessel read as 500 to 2000 meters long.\n"
-    "  - Every large armor face MUST be subdivided by visible panel-line work "
-    "into smaller sub-panels with clear seam lines and rivet courses — "
-    "absolutely NO smooth featureless slab surfaces.\n"
-    "  - Antenna mast forests, parabolic dish clusters, and sensor arrays "
-    "bristling from the dorsal spine and command citadel.\n"
-    "  - Recessed conduit channels, panel seams, and inset cable trays at the "
-    "joints between major hull modules — detail lives WITHIN the armor "
-    "envelope, NOT as external scaffolding hung off the outside.\n"
-    "  - Stenciled hull numbers, painted unit identification markings, and "
-    "warning chevron stripes around hatches and weapon mounts, used as accent-"
-    "color punctuation against the primary hull tone.\n"
-    "  - 'Symmetric base + asymmetric overlay' rule: the primary hull volume "
-    "is strictly left/right symmetric, but small bolted-on modules, antenna "
-    "mounts, patch panels, and equipment pods are intentionally placed "
-    "asymmetrically to give the vessel a lived-in production history rather "
-    "than a clean factory-fresh look.\n"
-    "  - Hull length-to-height ratio MUST be at least 4:1 — the vessel is a "
-    "long capital ship, not a stubby toy block."
+_COMPOSITION_PROSE_CAPITAL = (
+    "The hull reads as three clearly differentiated longitudinal acts along "
+    "its long axis. The forward third is an aggressive prow carrying the "
+    "heaviest concentration of weapons, sensors, or launch infrastructure, "
+    "setting the vessel's direction. The middle third is a vertically stacked "
+    "multi-tier armored superstructure, visually denser and taller than the "
+    "bow or stern, bristling with antenna masts, sensor dishes, and secondary "
+    "turrets — this is the visual focal point. The aft third is a thick "
+    "armored engine block whose multiple large thruster bells are partially "
+    "recessed into the armor plate, with internal framework only glimpsed "
+    "through armor cutouts and access panels rather than hung off external "
+    "scaffolding."
 )
 
-_OVA_ART_STYLE_HEADER = "ART STYLE (Late-1980s to Mid-1990s Japanese Mecha OVA Capital-Ship Aesthetic):"
-_OVA_ART_STYLE_BODY = (
-    "Hand-painted anime production cel artwork in the visual tradition of "
-    "capital-ship illustration by Kazutaka Miyatake, Shoji Kawamori, and "
-    "Junya Ishigaki during the 1985-1995 OVA era. NOT modern 3D rendering, "
-    "NOT video-game UI flat shading, NOT chibi or toy aesthetic, NOT "
-    "photorealistic.\n"
-    "Hard-edged cel-shaded shadow boundaries — one or two flat shadow tones "
-    "per surface — combined with subtle airbrushed gradient transitions "
-    "within the largest armor faces to give the metal weight and curvature.\n"
-    "Bold black ink linework on all silhouette edges; finer ink work for "
-    "panel lines, rivet courses, plate seams, and surface greebles. Line "
-    "weight varies — heavier on the silhouette, finer on internal detail.\n"
-    "Color rhythm (this is the OVA capital-ship signature):\n"
-    "  - PRIMARY hull tone (~70% of surface area): warm grey, pale blue-grey, "
-    "off-white, or muted olive — the calm dominant color.\n"
-    "  - SECONDARY structural tone (~25%): a darker recess color used inside "
-    "engine bells, panel recesses, shadow zones beneath overhanging armor, "
-    "and within the armor cutouts of the aft engine block.\n"
-    "  - ACCENT warning color (~5% — used SPARINGLY): a single saturated red, "
-    "orange, or yellow used only for warning stripes, stenciled hull numbers, "
-    "hazard chevrons around hatches and weapon mounts, and one or two small "
-    "detail callouts. The accent must read as warning paint or unit insignia, "
-    "NOT as primary livery."
-)
-_OVA_ART_STYLE_REMINDER = (
-    "REMINDER: Absolutely NO text, NO labels, NO arrows, NO annotations "
-    "anywhere in the image. NO modern 3D render aesthetic, NO toy-like "
-    "proportions, NO smooth featureless armor faces."
+_SURFACE_PROSE_CAPITAL = (
+    "Surface detail is dense and reads as a true capital-ship illustration. "
+    "Hundreds of small lighted viewports, portholes, and access hatches are "
+    "scattered across the entire hull surface, sized as human-scale crew "
+    "ports — they are the implicit scale reference that makes the vessel "
+    "read as 500 to 2000 meters long. Every large armor face is subdivided "
+    "by panel-line work into smaller sub-panels with clear seam lines and "
+    "rivet courses. Antenna mast forests, parabolic dish clusters, and sensor "
+    "arrays bristle from the dorsal spine. Conduit channels, panel seams, and "
+    "inset cable trays live within the armor envelope. Stenciled hull numbers, "
+    "painted unit markings, and warning chevron stripes punctuate the surface "
+    "as accent-color details. The primary hull volume is strictly left/right "
+    "symmetric, while small bolted-on modules, antenna mounts, patch panels, "
+    "and equipment pods are placed asymmetrically to give the vessel a "
+    "lived-in production history. The hull is at least four times longer "
+    "than it is tall."
 )
 
+_SURFACE_PROSE_FIGHTER = (
+    "Surface detail is crisp and densely greebled at the scale of a single-"
+    "pilot fighter: panel-line work subdivides every armor face into smaller "
+    "sub-panels with rivet courses, intake grilles, and access hatches; "
+    "stenciled unit numbers and warning chevron stripes punctuate the hull "
+    "as accent-color details; small bolted-on antenna mounts, conformal "
+    "hardpoints, and pylon adapters are placed asymmetrically over a strictly "
+    "symmetric primary airframe."
+)
+
+_STYLE_PROSE = (
+    "The artwork uses hard-edged cel-shaded shadow boundaries with one or "
+    "two flat shadow tones per surface, combined with subtle airbrushed "
+    "gradients within the largest armor faces to give the metal weight and "
+    "curvature. Bold black ink linework defines all silhouette edges, with "
+    "finer ink for panel lines, rivet courses, and surface greebles. Line "
+    "weight is heavier on the silhouette and finer on internal detail. The "
+    "primary hull tone occupies roughly seventy percent of the surface area "
+    "as the calm dominant color; a darker structural tone occupies roughly "
+    "twenty-five percent, used inside engine bells, panel recesses, and "
+    "shadowed zones beneath overhanging armor; a single saturated warning "
+    "accent (red, orange, or yellow) occupies the remaining five percent, "
+    "used sparingly for warning stripes, stenciled numbers, hazard chevrons, "
+    "and one or two unit insignia."
+)
+
+_LAYOUT_PROSE = (
+    "The image is a clean reference sheet on a pure solid white background. "
+    "Four orthographic views of the same vessel are arranged in a 2x2 grid "
+    "at 1:1 aspect ratio: front view in the upper left, side view in the "
+    "upper right, top-down view in the lower left, and three-quarter "
+    "isometric view in the lower right. The four views are visually isolated "
+    "from each other with no overlap and no panel separator lines drawn "
+    "between them. The artwork is purely visual — no text, letters, numbers, "
+    "labels, captions, arrows, callout lines, dimension markings, or any "
+    "other typographic or diagrammatic overlay."
+)
+
+
+# --- Generator class ---
 
 class ShipGenerator(pg.ComponentGenerator):
     def __init__(
@@ -296,151 +287,190 @@ class ShipGenerator(pg.ComponentGenerator):
         self.designers = designers or []
         self.archetype = get_archetype(archetype_name) or {}
 
+    # --- Internal helpers -------------------------------------------------
+
     def _is_capital_class(self) -> bool:
         """Three-act composition + 4:1 length clause apply to anything large
-        enough to support a stacked superstructure. Single-pilot fighters are
-        excluded since they have no command citadel."""
-        return self.archetype.get("id") != "fighter"
+        enough to support a stacked superstructure. Single-pilot fighters and
+        small private craft are excluded."""
+        return self.archetype.get("id") not in {"fighter"}
 
-    def _get_ship_negative_prompt(self) -> str:
-        base = (
-            "**SHIP-SPECIFIC FORBIDDEN ELEMENTS:**\n"
-            "- NO crew figures, NO pilots, NO scale-figure silhouettes next to the ship.\n"
-            "- NO planetary background, NO stars, NO nebulae, NO ground terrain — pure white background only.\n"
-            "- NO motion lines, NO engine exhaust trails, NO weapon fire effects.\n"
-            "- NO panel separator lines or grid borders drawn between the four views.\n"
-            "- NO blueprint overlays, NO dimension markings, NO callout arrows.\n"
-            "- NO ocean, NO water, NO sea spray, NO waterline — this is a vessel that operates in vacuum, not on a fluid surface.\n"
-            "- The command structure is a piece of armored equipment, NOT shaped like an animal or human face — NO face features (eyes, mouth, lips, brows), NO crowning antenna 'horns' arranged like ears, NO viewport patterns shaped like a face.\n"
-            "- NO toy-like proportions, NO chibi shapes, NO smooth featureless armor slabs, NO single-color flat panels, NO sparse uncluttered surfaces — the vessel must read as a dense capital-ship illustration, not as a plastic model or game-asset placeholder.\n"
-            "- NO modern photorealistic 3D render aesthetic, NO PBR material shaders, NO ray-traced reflections — this is hand-painted anime cel art.\n"
-            "- **ANTI-SCAFFOLDING REAR-ENGINE NEGATIVE (CRITICAL):** the rear engine section must NOT be drawn as an open scaffolding rig, oil-derrick framework, exposed steel trusswork, or skeletal cradle of girders holding the thrusters in space. The thruster bells are PARTIALLY RECESSED into a thick armored aft engine block; framework is only glimpsed THROUGH armor cutouts and access panels, never hung externally on naked beams."
-        )
-        if self.archetype.get("carries_mecha"):
-            base += "\n\n" + _CARRIER_NEGATIVE
-        return base
-
-    def _get_three_act_composition(self) -> str:
-        return _THREE_ACT_COMPOSITION if self._is_capital_class() else ""
-
-    def _get_surface_density_directive(self) -> str:
-        if self._is_capital_class():
-            return _SURFACE_DENSITY_DIRECTIVE
-        # Strip the 4:1 clause for single-pilot fighters.
-        return "\n".join(
-            line for line in _SURFACE_DENSITY_DIRECTIVE.splitlines()
-            if "length-to-height" not in line and "capital ship" not in line
-        )
-
-    def _get_art_style(self) -> str:
-        """Ship-specific override of the parent's PC-98 art style. Targets the
-        late-1980s to mid-1990s Japanese mecha OVA capital-ship illustration
-        idiom rather than retro game UI. Designer names only — no work titles."""
+    def _palette_clause(self) -> str:
+        """Resolve the palette into a single descriptive clause that sits at
+        the end of the style paragraph. Manufacturer > custom > tier default."""
         if self.manufacturer_data:
-            palette = self.manufacturer_data["color_palette"]
-        elif self.primary_color and self.secondary_color:
-            palette = (
-                f"{self.primary_color} dominant hull tone, "
-                f"{self.secondary_color} accent and warning markings, "
-                "dark mechanical recess details."
+            return f"The hull palette is: {self.manufacturer_data['color_palette']}"
+        if self.primary_color and self.secondary_color:
+            return (
+                f"The hull palette is: {self.primary_color} as the dominant "
+                f"hull tone, {self.secondary_color} as the accent and warning "
+                "marking color, with darker mechanical recesses."
             )
-        else:
-            palette = self.get_tier_data()["color_palette"]
-        palette_line = f"Color Palette: {palette}"
-        return "\n".join([
-            _OVA_ART_STYLE_HEADER,
-            _OVA_ART_STYLE_BODY,
-            palette_line,
-            _OVA_ART_STYLE_REMINDER,
-        ])
+        return f"The hull palette is: {self.get_tier_data()['color_palette']}"
 
-    def _designer_signature_line(self) -> str:
+    def _designer_attribution(self) -> str:
+        """Short attribution for paragraph 1 — names only, kept under one
+        sentence so the high-weight first ~50 words stay punchy."""
         if not self.designers:
             return ""
-        names = ", ".join(d["name"] for d in self.designers)
-        sigs = "  ".join(d.get("signature", "").strip() for d in self.designers if d.get("signature"))
-        sigs = sigs.strip()
-        line = (
-            f"DESIGNER SIGNATURE — DRIVE THE SILHOUETTE FROM THIS: "
-            f"This vessel is designed by {names}, and the entire silhouette, hull "
-            f"proportions, bridge tower style, and engine block treatment must follow "
-            f"that designer's distinctive visual vocabulary as described below.\n"
-            f"Designer vocabulary: {sigs}"
-        )
-        return line
+        names = [d["name"] for d in self.designers]
+        if len(names) == 1:
+            return f"The vessel is designed by {names[0]}."
+        return f"The vessel is designed by {', '.join(names)}."
 
-    def generate_subject_description(self) -> str:
+    def _designer_signature_clause(self) -> str:
+        """Long-form designer style signature for paragraph 2. Multi-designer
+        selection lists every name but uses only the first designer's
+        signature for stability — combining signatures tends to produce
+        contradictory direction."""
+        if not self.designers:
+            return ""
+        primary = self.designers[0]
+        sig = (primary.get("signature") or "").strip().rstrip(".")
+        if not sig:
+            return ""
+        return (
+            f"The designer's distinctive visual vocabulary drives every "
+            f"silhouette decision: {sig}."
+        )
+
+    def _article(self, word: str) -> str:
+        return "an" if word[:1].lower() in {"a", "e", "i", "o", "u"} else "a"
+
+    def _features_prose(self) -> str:
+        """Pick a handful of features from the archetype pool and stitch them
+        into a natural sentence rather than a bulleted list."""
+        pool = list(self.archetype.get("features_pool", []))
+        if not pool:
+            return ""
+        n = 3 if self.archetype.get("id") == "fighter" else 4
+        picks = random.sample(pool, min(n, len(pool)))
+        if len(picks) == 1:
+            return f"Visible structural features include {picks[0]}."
+        head, tail = picks[:-1], picks[-1]
+        return "Visible structural features include " + ", ".join(head) + ", and " + tail + "."
+
+    # --- Paragraph builders ----------------------------------------------
+
+    def _para_subject(self) -> str:
+        """Paragraph 1 — Medium + Subject + Designer attribution. Loaded
+        into the high-weight first ~50 words; deliberately kept short.
+        The longer designer signature goes in paragraph 2."""
         arche = self.archetype
         tier_data = self.get_tier_data()
-        tier_adj = tier_data["adjectives"][0]
-        tier_secondary = tier_data["adjectives"][1] if len(tier_data["adjectives"]) > 1 else tier_adj
-        design_lang = self._get_design_language()
+        tier_adj = tier_data["adjectives"][0].lower()
 
-        role = arche.get("role", "spacecraft")
-        unique_anchor = arche.get("unique_anchor", "")
-        silhouette = arche.get("silhouette", "")
-        scale_note = arche.get("scale_note", "")
-        pool = list(arche.get("features_pool", []))
-        features = random.sample(pool, min(4, len(pool))) if pool else []
-        feature_prose = "; ".join(features)
+        role = arche.get("role", "spaceship")
+        scale = arche.get("scale_note", "").strip().rstrip(".")
 
-        designer_line = self._designer_signature_line()
-        variant_line = _variant_descriptor(self.variation)
-
-        lines = [
-            f"SUBJECT DESCRIPTION ({tier_adj} {role}):",
-            (f"This is a complete spaceship — a {tier_secondary} {role}. "
-             "The vessel is shown as a clean reference sheet, fully isolated."),
-        ]
-        if unique_anchor:
-            lines.append(f"Defining visual anchor (must dominate the silhouette): {unique_anchor}.")
-        if silhouette:
-            lines.append(f"Silhouette: {silhouette}.")
-        if scale_note:
-            lines.append(f"Scale: {scale_note}.")
-        if designer_line:
-            lines.append(designer_line)
-        lines.append(f"Design language: {design_lang}")
-        if variant_line:
-            lines.append(variant_line)
-        if arche.get("carries_mecha"):
-            lines.append(_CARRIER_DIRECTIVE)
-        if feature_prose:
-            lines.append(
-                "Visible structural features (drawn as part of the geometry, NOT labeled "
-                f"with text): {feature_prose}."
-            )
-        return "\n".join(lines)
-
-    def generate_full_prompt(self) -> str:
-        tier_adj = self.get_tier_data()["adjectives"][0]
-        archetype_name = self.archetype.get("name", self.subcategory)
-
-        subject_name = f"{tier_adj} {archetype_name}-class spaceship"
+        manuf_clause = ""
         if self.manufacturer_data:
-            subject_name = f"{self.manufacturer_data['name']} {subject_name}"
-        if self.variation and self.variation != "Standard":
-            subject_name += f" ({self.variation})"
-        if self.designers:
-            subject_name += f" — designed by {', '.join(d['name'] for d in self.designers)}"
+            manuf_clause = f" built by {self.manufacturer_data['name']}"
 
-        header = (
-            f"# \n\n`A 2x2 grid illustration (NO TEXT, NO LABELS, NO ARROWS, "
-            f"NO PANEL SEPARATOR LINES) showing 4 views of a {subject_name}."
+        article = self._article(tier_adj)
+        sentences = [
+            _MEDIUM_LINE,
+            f"The subject is {article} {tier_adj}-grade {role}{manuf_clause}.",
+        ]
+        if scale:
+            sentences.append(f"Scale: {scale}.")
+
+        attribution = self._designer_attribution()
+        if attribution:
+            sentences.append(attribution)
+
+        return " ".join(sentences)
+
+    def _para_silhouette(self) -> str:
+        """Paragraph 2 — Defining anchor + silhouette + (capital-only)
+        three-act composition + (carrier-only) inline launch directive +
+        designer signature (folded in here so it directly informs the
+        shape rather than getting lost up top)."""
+        arche = self.archetype
+        anchor = (arche.get("unique_anchor") or "").strip().rstrip(".")
+        silhouette = (arche.get("silhouette") or "").strip().rstrip(".")
+
+        sentences: List[str] = []
+
+        designer_sig = self._designer_signature_clause()
+        if designer_sig:
+            sentences.append(designer_sig)
+
+        if anchor:
+            sentences.append(f"The defining visual anchor that must dominate the silhouette is: {anchor}.")
+        if silhouette:
+            sentences.append(f"Overall silhouette: {silhouette}.")
+
+        if self._is_capital_class():
+            sentences.append(_COMPOSITION_PROSE_CAPITAL)
+
+        if arche.get("carries_mecha"):
+            sentences.append(_CARRIER_INLINE)
+
+        return " ".join(sentences)
+
+    def _para_surface(self) -> str:
+        """Paragraph 3 — Surface density + features + (variant)."""
+        sentences: List[str] = []
+        if self._is_capital_class():
+            sentences.append(_SURFACE_PROSE_CAPITAL)
+        else:
+            sentences.append(_SURFACE_PROSE_FIGHTER)
+
+        feats = self._features_prose()
+        if feats:
+            sentences.append(feats)
+
+        variant_text = _variant_descriptor(self.variation).strip()
+        if variant_text:
+            sentences.append(variant_text)
+
+        return " ".join(sentences)
+
+    def _para_style(self) -> str:
+        """Paragraph 4 — Cel-shading style + color rhythm + palette."""
+        return _STYLE_PROSE + " " + self._palette_clause()
+
+    def _para_layout(self) -> str:
+        """Paragraph 5 — Four-view sheet layout + zero-text positive directive."""
+        return _LAYOUT_PROSE
+
+    # --- Public API -------------------------------------------------------
+
+    def generate_subject_description(self) -> str:
+        """Kept for backward compatibility with anything calling the old API
+        (e.g. unit tests that exercise individual sections). Returns the
+        subject + silhouette paragraphs joined."""
+        return self._para_subject() + "\n\n" + self._para_silhouette()
+
+    def _para_layout_openai(self) -> str:
+        """Paragraph 5 variant for GPT-image: same content but uses explicit
+        negative sentences that reasoning models handle better than omission."""
+        return (
+            _LAYOUT_PROSE
+            + " Do not add any text, labels, dimension lines, callout arrows, "
+            "or typographic overlays anywhere in the image."
         )
 
-        sections = [
-            header,
-            self._get_layout_criteria(),
-            self._get_negative_prompt(),
-            self._get_ship_negative_prompt(),
-            self.generate_subject_description(),
-            self._get_three_act_composition(),
-            self._get_surface_density_directive(),
-            self._get_view_protocol(),
-            self._get_art_style() + "`",
-        ]
-        return "\n\n".join(s for s in sections if s) + "\n"
+    def generate_full_prompt(self, backend: str = "gemini") -> str:
+        if backend == "openai":
+            paragraphs = [
+                self._para_subject(),
+                self._para_silhouette(),
+                self._para_surface(),
+                self._para_style(),
+                self._para_layout_openai(),
+            ]
+        else:
+            paragraphs = [
+                self._para_subject(),
+                self._para_silhouette(),
+                self._para_surface(),
+                self._para_style(),
+                self._para_layout(),
+            ]
+        body = "\n\n".join(p for p in paragraphs if p)
+        return body + "\n"
 
 
 # --- UI helpers ---
@@ -462,6 +492,7 @@ def generate_ship_prompt_by_strings(
     manufacturer_name: Optional[str] = None,
     variation_name: Optional[str] = None,
     designer_names: Optional[List[str]] = None,
+    backend: str = "gemini",
 ) -> str:
     try:
         tier = pg.Tier[tier_name]
@@ -490,14 +521,14 @@ def generate_ship_prompt_by_strings(
         variation=variation_name,
         designers=designers,
     )
-    return gen.generate_full_prompt()
+    return gen.generate_full_prompt(backend=backend)
 
 
 if __name__ == "__main__":
     out = generate_ship_prompt_by_strings(
         "TIER_3_MILITARY",
-        "Carrier",
-        manufacturer_name="Vector Dynamics",
+        "Fleet Carrier",
+        manufacturer_name=None,
         variation_name="Block-II Refit",
         designer_names=["Kazutaka Miyatake"],
     )

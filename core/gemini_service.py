@@ -105,6 +105,7 @@ def edit_image_bytes(
     image_mime: Optional[str],
     api_key: str,
     model: str = DEFAULT_MODEL,
+    extra_images: Optional[list] = None,
 ) -> Tuple[bytes, Optional[str]]:
     if not api_key:
         raise GeminiError("Missing API key.")
@@ -118,14 +119,22 @@ def edit_image_bytes(
 
     base_url = _get_api_base_url(api_key)
     url = f"{base_url}/v1beta/{model_path}:generateContent?key={api_key}"
+
+    parts: list = [
+        {"text": prompt},
+        {"inline_data": {"mime_type": mime_type, "data": image_b64}},
+    ]
+    if extra_images:
+        for extra_bytes, extra_mime in extra_images:
+            extra_mime = extra_mime or "image/png"
+            extra_b64 = base64.b64encode(extra_bytes).decode("utf-8")
+            parts.append({"inline_data": {"mime_type": extra_mime, "data": extra_b64}})
+
     payload = {
         "contents": [
             {
                 "role": "user",
-                "parts": [
-                    {"text": prompt},
-                    {"inline_data": {"mime_type": mime_type, "data": image_b64}},
-                ],
+                "parts": parts,
             }
         ],
         "generationConfig": {

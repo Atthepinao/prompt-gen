@@ -12,19 +12,22 @@ _labels_to_values = _shared.labels_to_values
 _localize_text = _shared.localize_text
 _get_option_pairs = _shared.get_option_pairs
 
-# ---------------------------------------------------------------------------
-# Default style constants (fallback if character_style.json is absent).
-# Written in natural-language narrative format for NanoBanana / Gemini image models.
-# ---------------------------------------------------------------------------
-# Style prefix only; core 90s descriptors are assembled inline in generate_character_prompt()
-DEFAULT_STYLE = "best quality, masterpiece, 1990s vintage Japanese anime"
+DEFAULT_STYLE = (
+    "(masterpiece, best quality), late-1980s to early-2000s Japanese mecha OVA or theatrical key visual, "
+    "real-robot anime aesthetic, hand-drawn cel animation still, hand-painted cel shading, "
+    "flat color fills, hard-edged shadow shapes, clean lineart, crisp forms, "
+    "limited palette, subtle color banding, minimal gradients, bold graphic silhouettes, "
+    "utilitarian military sci-fi design, realistic 90s facial proportions, restrained eye highlights, "
+    "cinematic composition, analog texture."
+)
 
 DEFAULT_BACKGROUND = "simple pure white background, flat white background, isolated on white."
-
 DEFAULT_MOOD = (
-    "No modern anime sheen, no soft digital glow, no smooth gradients. "
-    "No 3D or CGI rendering, no photorealistic textures, no contemporary digital art style. "
-    "Matte surface quality. No oversized moe-style eyes. No soft focus or depth-of-field blur."
+    "(film grain:1.3), muted colors, vintage OVA atmosphere, hand-painted cel look, "
+    "matte finish, clean paint layers, subtle cel misregistration, analog video texture, "
+    "no oily or glossy look, no modern anime sheen, no oversized eyes, no soft glow, "
+    "no 3d, no cgi, no photorealism, no digital painting look, no painterly brushwork, "
+    "no thick paint, no heavy impasto, no soft focus, no depth of field."
 )
 
 STYLE_CONFIG_PATH = resource_path("character_style.json")
@@ -563,7 +566,8 @@ def get_eye_color_options(lang: str = "en") -> List[str]:
 
 
 
-def _build_char_traits(
+def _format_subject(
+    framing: str,
     gender: Optional[str],
     age: Optional[str],
     body_type: Optional[str],
@@ -585,390 +589,68 @@ def _build_char_traits(
     jaw_width: Optional[str],
     eye_color: Optional[str],
 ) -> str:
-    """Return a compact comma-separated character trait list for embedding inside
-    the main prompt block.  No framing, no verbose phrasing — mirrors the terse
-    style of the verified reference prompts ('1girl', 'black twin tails hair', etc.)."""
-    parts: List[str] = []
+    descriptors = []
+    if age and age != "Unspecified":
+        descriptors.append(age.lower())
+    if gender and gender != "Unspecified":
+        descriptors.append(gender.lower())
+    if body_type and body_type != "Unspecified":
+        descriptors.append(body_type.lower())
 
-    # Compact gender marker  (1girl / 1boy / 1person)
-    _GENDER_MARKERS = {
-        "male":        "1boy",
-        "female":      "1girl",
-        "androgynous": "1person",
-        "non-binary":  "1person",
-    }
-    if gender and gender not in ("Unspecified", ""):
-        parts.append(_GENDER_MARKERS.get(gender.lower(), "1person"))
-
-    # Age descriptor
-    if age and age not in ("Unspecified", ""):
-        parts.append(age.lower())
-
-    # Body type
-    if body_type and body_type not in ("Unspecified", ""):
-        parts.append(body_type)
-
-    # Skin tone
-    if skin_tone and skin_tone not in ("Unspecified", ""):
-        parts.append(skin_tone)
-
-    # Clothing  (no "wearing" prefix — more compact)
-    if clothing_hint and clothing_hint not in ("Unspecified", ""):
-        parts.append(clothing_hint)
-
-    # Hair
-    hair_palette = _colors_to_palette_text(hair_colors)
-    if hair_style and hair_style not in ("Unspecified", ""):
-        if hair_color and hair_color not in ("Unspecified", ""):
-            if hair_palette:
-                parts.append(f"{hair_color} {hair_style} hair in {hair_palette} tones")
-            else:
-                parts.append(f"{hair_color} {hair_style} hair")
-        elif hair_palette:
-            parts.append(f"{hair_style} hair in {hair_palette} tones")
-        else:
-            parts.append(f"{hair_style} hair")
-    elif hair_color and hair_color not in ("Unspecified", ""):
-        parts.append(f"{hair_color} hair")
-    elif hair_palette:
-        parts.append(f"hair in {hair_palette} tones")
-
-    # Bangs
-    if hair_bangs_presence and hair_bangs_presence not in ("Unspecified", ""):
-        if hair_bangs_style and hair_bangs_style not in ("Unspecified", ""):
-            parts.append(hair_bangs_style)
-        else:
-            parts.append(hair_bangs_presence)
-
-    # Face shape
-    if face_shape and face_shape not in ("Unspecified", ""):
-        parts.append(face_shape)
-
-    # Eyes: specific colour only — the rendering style (multi-layered highlights,
-    # hard-edge cel shading) is already stated in the global style descriptor block.
-    if eye_size and eye_size not in ("Unspecified", ""):
-        if eye_color and eye_color not in ("Unspecified", ""):
-            parts.append(f"{eye_size} with {eye_color} irises")
-        else:
-            parts.append(eye_size)
-    elif eye_color and eye_color not in ("Unspecified", ""):
-        parts.append(f"{eye_color} eyes")
-
-    # Other facial features
-    for opt in (nose_size, mouth_shape, cheek_fullness, jaw_width):
-        if opt and opt not in ("Unspecified", ""):
-            parts.append(opt)
-
-    # Extra appearance features
-    parts.extend(f for f in appearance_features if f)
-
-    # Expression + gaze
-    if expression:
-        parts.append(expression)
-    if gaze:
-        parts.append(gaze)
-
-    return ", ".join(parts)
-
-
-def _resolve_character_inputs(
-    gender: str,
-    age,
-    framing: str,
-    aspect_ratio: str,
-    expression: str,
-    gaze: str,
-    appearance_features: List[str],
-    body_type: str,
-    skin_tone: str,
-    hair_style: str,
-    hair_color: str,
-    hair_colors: List[str],
-    hair_bangs_presence: str,
-    hair_bangs_style: str,
-    face_shape: str,
-    eye_size: str,
-    nose_size: str,
-    mouth_shape: str,
-    cheek_fullness: str,
-    jaw_width: str,
-    eye_color: str,
-    clothing_hint: str,
-    artists: List[str],
-    lang: str,
-) -> Dict:
-    """Resolve all UI label values to canonical English strings."""
-    gender_value         = _label_to_value(gender,          _make_option_map(GENDER_OPTION_PAIRS, lang))
-    age_descriptor       = _age_to_descriptor(age)
-    if age_descriptor and age is not None:
-        try:
-            age_int = int(age)
-            age_value = f"{age_int}-year-old {age_descriptor}" if age_int > 0 else age_descriptor
-        except (TypeError, ValueError):
-            age_value = age_descriptor
+    descriptor_str = " ".join(descriptors)
+    if descriptor_str:
+        subject = f"a {descriptor_str} character"
     else:
-        age_value = age_descriptor
-    framing_value        = _label_to_value(framing,         _make_option_map(FRAMING_OPTION_PAIRS, lang))
-    aspect_ratio_value   = _label_to_value(aspect_ratio,    _make_option_map(ASPECT_RATIO_OPTION_PAIRS, lang))
-    expression_value     = _label_to_value(expression,      _make_option_map(EXPRESSION_OPTION_PAIRS, lang))
-    gaze_value           = _label_to_value(gaze,            _make_option_map(GAZE_OPTION_PAIRS, lang))
-    body_type_value      = _label_to_value(body_type,       _make_option_map(BODY_TYPE_OPTION_PAIRS, lang))
-    skin_tone_value      = _label_to_value(skin_tone,       _make_option_map(SKIN_TONE_OPTION_PAIRS, lang))
-    hair_style_value     = _label_to_value(hair_style,      _make_option_map(HAIR_STYLE_OPTION_PAIRS, lang))
-    hair_color_value     = _label_to_value(hair_color,      _make_option_map(HAIR_COLOR_OPTION_PAIRS, lang))
-    bangs_presence_value = _label_to_value(hair_bangs_presence, _make_option_map(BANGS_PRESENCE_OPTION_PAIRS, lang))
-    bangs_style_value    = _label_to_value(hair_bangs_style,    _make_option_map(BANGS_STYLE_OPTION_PAIRS, lang))
-    face_shape_value     = _label_to_value(face_shape,      _make_option_map(FACE_SHAPE_OPTION_PAIRS, lang))
-    eye_size_value       = _label_to_value(eye_size,        _make_option_map(EYE_SIZE_OPTION_PAIRS, lang))
-    nose_size_value      = _label_to_value(nose_size,       _make_option_map(NOSE_SIZE_OPTION_PAIRS, lang))
-    mouth_shape_value    = _label_to_value(mouth_shape,     _make_option_map(MOUTH_SHAPE_OPTION_PAIRS, lang))
-    cheek_fullness_value = _label_to_value(cheek_fullness,  _make_option_map(CHEEK_FULLNESS_OPTION_PAIRS, lang))
-    jaw_width_value      = _label_to_value(jaw_width,       _make_option_map(JAW_WIDTH_OPTION_PAIRS, lang))
-    eye_color_value      = _label_to_value(eye_color,       _make_option_map(EYE_COLOR_OPTION_PAIRS, lang))
-    clothing_hint_value  = _label_to_value(clothing_hint,   _make_option_map(CLOTHING_HINT_OPTION_PAIRS, lang))
-    appearance_values    = _labels_to_values(appearance_features, _make_option_map(APPEARANCE_OPTION_PAIRS, lang))
-    return {
-        "gender":            gender_value,
-        "age":               age_value,
-        "framing":           framing_value,
-        "aspect_ratio":      aspect_ratio_value,
-        "expression":        expression_value,
-        "gaze":              gaze_value,
-        "body_type":         body_type_value,
-        "skin_tone":         skin_tone_value,
-        "hair_style":        hair_style_value,
-        "hair_color":        hair_color_value,
-        "hair_colors":       hair_colors,
-        "bangs_presence":    bangs_presence_value,
-        "bangs_style":       bangs_style_value,
-        "face_shape":        face_shape_value,
-        "eye_size":          eye_size_value,
-        "nose_size":         nose_size_value,
-        "mouth_shape":       mouth_shape_value,
-        "cheek_fullness":    cheek_fullness_value,
-        "jaw_width":         jaw_width_value,
-        "eye_color":         eye_color_value,
-        "clothing_hint":     clothing_hint_value,
-        "appearance_values": appearance_values,
-        "artists":           artists,
-    }
+        subject = "a character"
 
-
-def _assemble_gemini_character(resolved: Dict, style_cfg: Dict, flags: Dict) -> str:
-    """Tag-soup + prose hybrid tuned for NanoBanana / Gemini diffusion models."""
-    include_style           = flags.get("include_style", True)
-    include_background      = flags.get("include_background", True)
-    include_mood            = flags.get("include_mood", True)
-    include_extra_modifiers = flags.get("include_extra_modifiers", True)
-    extra_modifiers         = flags.get("extra_modifiers", "")
-
-    artists = resolved["artists"]
-    artist_ref = ""
-    if include_style and artists:
-        clean = [a.strip() for a in artists if a.strip()]
-        if clean:
-            artist_ref = "in the style of " + ", ".join(clean)
-
-    char_traits = _build_char_traits(
-        gender=resolved["gender"],
-        age=resolved["age"],
-        body_type=resolved["body_type"],
-        clothing_hint=resolved["clothing_hint"],
-        expression=resolved["expression"],
-        gaze=resolved["gaze"],
-        appearance_features=resolved["appearance_values"],
-        skin_tone=resolved["skin_tone"],
-        hair_style=resolved["hair_style"],
-        hair_color=resolved["hair_color"],
-        hair_colors=resolved["hair_colors"],
-        hair_bangs_presence=resolved["bangs_presence"],
-        hair_bangs_style=resolved["bangs_style"],
-        face_shape=resolved["face_shape"],
-        eye_size=resolved["eye_size"],
-        nose_size=resolved["nose_size"],
-        mouth_shape=resolved["mouth_shape"],
-        cheek_fullness=resolved["cheek_fullness"],
-        jaw_width=resolved["jaw_width"],
-        eye_color=resolved["eye_color"],
-    )
-
-    framing_value     = resolved["framing"]
-    aspect_ratio_value = resolved["aspect_ratio"]
-    framing_str = framing_value if (framing_value and framing_value != "Unspecified") else ""
-    ratio_str = ""
-    if aspect_ratio_value and aspect_ratio_value != "Unspecified":
-        ratio_str = f"aspect ratio {aspect_ratio_value.split()[0]}"
-
-    main_parts: List[str] = []
-    if include_style:
-        main_parts.append(style_cfg["style"].rstrip("."))
-        if artist_ref:
-            main_parts.append(artist_ref)
-    if char_traits:
-        main_parts.append(char_traits)
-    if include_style:
-        main_parts.extend([
-            "sharp angular facial features",
-            "large detailed eyes with multi-layered highlight reflections",
-            "slightly thick hand-drawn linework with natural weight variation",
-            "cel-shaded skin with visible paint edge between light and shadow zones",
-            "warm slightly muted color palette with limited saturation",
-            "hair rendered in blocky color sections with hard-edge highlights",
-            "soft film grain texture across entire frame",
-            "slight warm color cast",
-        ])
-    if framing_str:
-        main_parts.append(framing_str)
-    if include_background:
-        main_parts.append(style_cfg["background"].rstrip("."))
-    if include_style:
-        main_parts.extend(["vintage anime production quality", "nostalgic atmosphere", "high resolution"])
-    if ratio_str:
-        main_parts.append(ratio_str)
-
-    main_block = ", ".join(main_parts).rstrip("., ") + "."
-    sections: List[str] = [main_block]
-    if include_mood:
-        sections.append(style_cfg["mood"])
-    if include_extra_modifiers and extra_modifiers.strip():
-        sections.append(extra_modifiers.strip())
-    return "\n\n".join(sections).strip() + "\n"
-
-
-def _assemble_openai_character(resolved: Dict, style_cfg: Dict, flags: Dict) -> str:
-    """Natural-language prose prompt for GPT-image / reasoning-enhanced models."""
-    include_style      = flags.get("include_style", True)
-    include_background = flags.get("include_background", True)
-    include_mood       = flags.get("include_mood", True)
-    include_extra      = flags.get("include_extra_modifiers", True)
-    extra_modifiers    = flags.get("extra_modifiers", "")
-
-    _SKIP = {"Unspecified", ""}
-    def _s(v: Optional[str]) -> bool:
-        return not v or v in _SKIP
-
-    def _article(w: str) -> str:
-        return "an" if w[:1].lower() in "aeiou" else "a"
-
-    gender  = resolved.get("gender", "") or ""
-    age     = resolved.get("age", "") or ""
-    body    = resolved.get("body_type", "") or ""
-    skin    = resolved.get("skin_tone", "") or ""
-    cloth   = resolved.get("clothing_hint", "") or ""
-    h_style = resolved.get("hair_style", "") or ""
-    h_color = resolved.get("hair_color", "") or ""
-    h_cols  = resolved.get("hair_colors", []) or []
-    b_pres  = resolved.get("bangs_presence", "") or ""
-    b_sty   = resolved.get("bangs_style", "") or ""
-    face    = resolved.get("face_shape", "") or ""
-    e_size  = resolved.get("eye_size", "") or ""
-    e_color = resolved.get("eye_color", "") or ""
-    nose    = resolved.get("nose_size", "") or ""
-    mouth   = resolved.get("mouth_shape", "") or ""
-    cheek   = resolved.get("cheek_fullness", "") or ""
-    jaw     = resolved.get("jaw_width", "") or ""
-    expr    = resolved.get("expression", "") or ""
-    gaze    = resolved.get("gaze", "") or ""
-    framing = resolved.get("framing", "") or ""
-    aspect  = resolved.get("aspect_ratio", "") or ""
-    extras  = resolved.get("appearance_values", []) or []
-    artists = resolved.get("artists", []) or []
-
-    _GENDER_MAP = {
-        "male":        ("man",    "He",   "His",  "has"),
-        "female":      ("woman",  "She",  "Her",  "has"),
-        "androgynous": ("person", "They", "Their","have"),
-        "non-binary":  ("person", "They", "Their","have"),
-    }
-    noun, subj, poss, verb_have = _GENDER_MAP.get(
-        gender.lower(), ("person", "They", "Their", "have")
-    )
-
-    # ── Subject sentence ──────────────────────────────────────────────────
-    age_str   = f"{age} " if not _s(age) else ""
-    body_str  = f" with {body}" if not _s(body) else ""
-    skin_str  = f", {skin}" if not _s(skin) else ""
-    cloth_str = f", dressed in {_article(cloth)} {cloth}" if not _s(cloth) else ""
-    subject = f"A {age_str}{noun}{body_str}{skin_str}{cloth_str}."
-
-    # ── Appearance sentence ───────────────────────────────────────────────
-    clauses: List[str] = []
-
-    palette = _colors_to_palette_text(h_cols)
-    if not _s(h_style) and not _s(h_color):
-        hd = f"{h_color} {h_style} hair"
-        clauses.append(hd + (f" in {palette} tones" if palette else ""))
-    elif not _s(h_style):
-        clauses.append(f"{h_style} hair" + (f" in {palette} tones" if palette else ""))
-    elif not _s(h_color):
-        clauses.append(f"{h_color} hair")
-
-    if not _s(b_pres):
-        clauses.append(b_sty if not _s(b_sty) else b_pres)
-
-    if not _s(face):
-        clauses.append(f"{_article(face)} {face}")
-    if not _s(e_size) and not _s(e_color):
-        clauses.append(f"{e_size} with {e_color} irises")
-    elif not _s(e_size):
-        clauses.append(e_size)
-    elif not _s(e_color):
-        clauses.append(f"{e_color} eyes")
-    for feat in [nose, mouth, cheek, jaw]:
-        if not _s(feat):
-            clauses.append(feat)
-    clauses.extend(f for f in extras if f)
-
-    appearance_sentence = ""
-    if clauses:
-        if len(clauses) == 1:
-            appearance_sentence = f"{subj} {verb_have} {clauses[0]}."
+    features = list(appearance_features)
+    if skin_tone and skin_tone != "Unspecified":
+        features.append(skin_tone)
+    hair_palette = _colors_to_palette_text(hair_colors)
+    if hair_style and hair_style != "Unspecified":
+        if hair_color and hair_color != "Unspecified":
+            if hair_palette:
+                features.append(f"{hair_style} hair dyed in {hair_palette} tones")
+            else:
+                features.append(f"{hair_style} {hair_color} hair")
         else:
-            appearance_sentence = (
-                f"{subj} {verb_have} {', '.join(clauses[:-1])}, and {clauses[-1]}."
-            )
+            if hair_palette:
+                features.append(f"{hair_style} hair dyed in {hair_palette} tones")
+            else:
+                features.append(f"{hair_style} hair")
+    elif hair_color and hair_color != "Unspecified":
+        if hair_palette:
+            features.append(f"hair dyed in {hair_palette} tones")
+        else:
+            features.append(f"{hair_color} hair")
+    elif hair_palette:
+        features.append(f"hair dyed in {hair_palette} tones")
+    if hair_bangs_presence and hair_bangs_presence != "Unspecified":
+        features.append(hair_bangs_presence)
+    if hair_bangs_style and hair_bangs_style != "Unspecified":
+        features.append(hair_bangs_style)
+    if face_shape and face_shape != "Unspecified":
+        features.append(face_shape)
+    if eye_size and eye_size != "Unspecified":
+        features.append(eye_size)
+    if nose_size and nose_size != "Unspecified":
+        features.append(nose_size)
+    if mouth_shape and mouth_shape != "Unspecified":
+        features.append(mouth_shape)
+    if cheek_fullness and cheek_fullness != "Unspecified":
+        features.append(cheek_fullness)
+    if jaw_width and jaw_width != "Unspecified":
+        features.append(jaw_width)
+    if eye_color and eye_color != "Unspecified":
+        features.append(f"{eye_color} eyes")
 
-    # ── Expression / gaze sentence ────────────────────────────────────────
-    expr_sentence = ""
-    eg_parts = [p for p in [expr, gaze] if not _s(p)]
-    if eg_parts:
-        expr_sentence = f"{poss} expression: {', '.join(eg_parts)}."
+    feature_text = ""
+    if features:
+        feature_text = " with " + ", ".join(features)
 
-    # ── Composition + background sentence ────────────────────────────────
-    comp_parts = []
-    if not _s(framing) and framing != "Unspecified":
-        comp_parts.append(framing.capitalize())
-    if not _s(aspect) and aspect != "Unspecified":
-        comp_parts.append(f"aspect ratio {aspect.split()[0]}")
-    if include_background:
-        bg = style_cfg.get("background", DEFAULT_BACKGROUND).rstrip(".")
-        comp_parts.append(bg[:1].upper() + bg[1:] if bg else bg)
-    comp_sentence = ". ".join(comp_parts) + "." if comp_parts else ""
+    clothing_text = f"wearing a {clothing_hint}" if clothing_hint else "wearing a plain neutral garment"
 
-    para1 = " ".join(p for p in [subject, appearance_sentence, expr_sentence, comp_sentence] if p)
-
-    # ── Style paragraph ───────────────────────────────────────────────────
-    para2 = ""
-    if include_style:
-        artist_clause = ""
-        if artists:
-            clean = [a.strip() for a in artists if a.strip()]
-            if clean:
-                artist_clause = " in the style of " + ", ".join(clean)
-        para2 = (
-            f"Art style: 1990s Japanese cel-animated anime{artist_clause}. "
-            "Sharp angular facial features, thick hand-drawn linework with natural weight variation, "
-            "hard-edged cel-shaded shadow boundaries, hair rendered in blocky color sections "
-            "with hard-edge highlights, warm muted color palette with limited saturation, "
-            "and soft film grain throughout the frame."
-        )
-
-    # ── Mood / avoidance paragraph ────────────────────────────────────────
-    para3 = style_cfg.get("mood", DEFAULT_MOOD).strip() if include_mood else ""
-
-    para4 = extra_modifiers.strip() if include_extra and extra_modifiers.strip() else ""
-
-    return "\n\n".join(p for p in [para1, para2, para3, para4] if p).strip() + "\n"
+    return f"{framing}, {subject} {clothing_text}{feature_text}, {expression}, {gaze}."
 
 
 def generate_character_prompt(
@@ -1001,26 +683,79 @@ def generate_character_prompt(
     include_background: bool = True,
     include_mood: bool = True,
     include_extra_modifiers: bool = True,
-    backend: str = "gemini",
 ) -> str:
-    resolved = _resolve_character_inputs(
-        gender=gender, age=age, framing=framing, aspect_ratio=aspect_ratio,
-        expression=expression, gaze=gaze, appearance_features=appearance_features,
-        body_type=body_type, skin_tone=skin_tone, hair_style=hair_style,
-        hair_color=hair_color, hair_colors=hair_colors,
-        hair_bangs_presence=hair_bangs_presence, hair_bangs_style=hair_bangs_style,
-        face_shape=face_shape, eye_size=eye_size, nose_size=nose_size,
-        mouth_shape=mouth_shape, cheek_fullness=cheek_fullness, jaw_width=jaw_width,
-        eye_color=eye_color, clothing_hint=clothing_hint, artists=artists, lang=lang,
+    gender_value = _label_to_value(gender, _make_option_map(GENDER_OPTION_PAIRS, lang))
+    age_value = _age_to_descriptor(age)
+    framing_value = _label_to_value(framing, _make_option_map(FRAMING_OPTION_PAIRS, lang))
+    aspect_ratio_value = _label_to_value(aspect_ratio, _make_option_map(ASPECT_RATIO_OPTION_PAIRS, lang))
+    expression_value = _label_to_value(expression, _make_option_map(EXPRESSION_OPTION_PAIRS, lang))
+    gaze_value = _label_to_value(gaze, _make_option_map(GAZE_OPTION_PAIRS, lang))
+    body_type_value = _label_to_value(body_type, _make_option_map(BODY_TYPE_OPTION_PAIRS, lang))
+    skin_tone_value = _label_to_value(skin_tone, _make_option_map(SKIN_TONE_OPTION_PAIRS, lang))
+    hair_style_value = _label_to_value(hair_style, _make_option_map(HAIR_STYLE_OPTION_PAIRS, lang))
+    hair_color_value = _label_to_value(hair_color, _make_option_map(HAIR_COLOR_OPTION_PAIRS, lang))
+    bangs_presence_value = _label_to_value(hair_bangs_presence, _make_option_map(BANGS_PRESENCE_OPTION_PAIRS, lang))
+    bangs_style_value = _label_to_value(hair_bangs_style, _make_option_map(BANGS_STYLE_OPTION_PAIRS, lang))
+    face_shape_value = _label_to_value(face_shape, _make_option_map(FACE_SHAPE_OPTION_PAIRS, lang))
+    eye_size_value = _label_to_value(eye_size, _make_option_map(EYE_SIZE_OPTION_PAIRS, lang))
+    nose_size_value = _label_to_value(nose_size, _make_option_map(NOSE_SIZE_OPTION_PAIRS, lang))
+    mouth_shape_value = _label_to_value(mouth_shape, _make_option_map(MOUTH_SHAPE_OPTION_PAIRS, lang))
+    cheek_fullness_value = _label_to_value(cheek_fullness, _make_option_map(CHEEK_FULLNESS_OPTION_PAIRS, lang))
+    jaw_width_value = _label_to_value(jaw_width, _make_option_map(JAW_WIDTH_OPTION_PAIRS, lang))
+    eye_color_value = _label_to_value(eye_color, _make_option_map(EYE_COLOR_OPTION_PAIRS, lang))
+    clothing_hint_value = _label_to_value(clothing_hint, _make_option_map(CLOTHING_HINT_OPTION_PAIRS, lang))
+
+    appearance_values = _labels_to_values(appearance_features, _make_option_map(APPEARANCE_OPTION_PAIRS, lang))
+
+    subject_line = _format_subject(
+        framing=framing_value,
+        gender=gender_value,
+        age=age_value,
+        body_type=body_type_value,
+        clothing_hint=clothing_hint_value,
+        expression=expression_value,
+        gaze=gaze_value,
+        appearance_features=appearance_values,
+        skin_tone=skin_tone_value,
+        hair_style=hair_style_value,
+        hair_color=hair_color_value,
+        hair_colors=hair_colors,
+        hair_bangs_presence=bangs_presence_value,
+        hair_bangs_style=bangs_style_value,
+        face_shape=face_shape_value,
+        eye_size=eye_size_value,
+        nose_size=nose_size_value,
+        mouth_shape=mouth_shape_value,
+        cheek_fullness=cheek_fullness_value,
+        jaw_width=jaw_width_value,
+        eye_color=eye_color_value,
     )
+
+    ratio_line = ""
+    if aspect_ratio_value and aspect_ratio_value != "Unspecified":
+        ratio_line = f"aspect ratio {aspect_ratio_value.split()[0]}."
+
+    extra_line = extra_modifiers.strip() if include_extra_modifiers else ""
+
+    parts = [subject_line]
+    if ratio_line:
+        parts.extend(["", ratio_line])
     style_cfg = _load_style_config()
-    flags = {
-        "include_style":           include_style,
-        "include_background":      include_background,
-        "include_mood":            include_mood,
-        "include_extra_modifiers": include_extra_modifiers,
-        "extra_modifiers":         extra_modifiers,
-    }
-    if backend == "openai":
-        return _assemble_openai_character(resolved, style_cfg, flags)
-    return _assemble_gemini_character(resolved, style_cfg, flags)
+    if include_style:
+        style_line = style_cfg["style"]
+        if artists:
+            artist_text = ", ".join([a.strip() for a in artists if a.strip()])
+            if artist_text:
+                style_line = (
+                    f"{style_line} strongly in the style of {artist_text}, "
+                    f"character design and lineart influenced by {artist_text}."
+                )
+        parts = [style_line, ""] + parts
+    if include_background:
+        parts.extend(["", style_cfg["background"]])
+    if include_mood:
+        parts.extend(["", style_cfg["mood"]])
+    if extra_line:
+        parts.extend(["", extra_line])
+
+    return "\n".join(parts).strip() + "\n"

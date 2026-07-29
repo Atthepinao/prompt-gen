@@ -116,6 +116,7 @@ class ShipTab(BaseTab):
             manufacturer_name=manu_val,
             variation_name=var,
             designer_names=designers,
+            backend=self.window.active_backend,
         )
         self.set_output(prompt)
 

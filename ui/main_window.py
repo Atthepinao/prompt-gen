@@ -73,6 +73,11 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._connect_signals()
 
+    @property
+    def active_backend(self) -> str:
+        """Return 'openai' or 'gemini' based on the currently selected provider."""
+        return "openai" if self.api_provider == "OpenAI" else "gemini"
+
     # ── Config helpers ────────────────────────────────────────────────────
 
     def _load_config(self) -> dict:

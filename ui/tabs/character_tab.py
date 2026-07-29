@@ -321,6 +321,7 @@ class CharacterTab(BaseTab):
                 lang=lang,
                 extra_modifiers=self.edit_extra.text().strip(),
                 include_style=not self.chk_ref_only.isChecked(),
+                backend=self.window.active_backend,
             )
             self.set_output(prompt)
         except Exception as e:

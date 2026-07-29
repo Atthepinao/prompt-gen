@@ -1,0 +1,18 @@
+{
+  "style": "(masterpiece, best quality), late-1980s to early-2000s Japanese mecha OVA or theatrical key visual, real-robot anime aesthetic, hand-drawn cel animation still, hand-painted cel shading, flat color fills, hard-edged shadow shapes, clean lineart, limited palette, subtle color banding, minimal gradients, bold graphic silhouettes, utilitarian military sci-fi design, realistic 90s facial proportions, restrained eye highlights, cinematic composition, analog texture.",
+  "background": "simple pure white background, flat white background, isolated on white.",
+  "mood": "(film grain:1.3), muted colors, vintage OVA atmosphere, hand-painted cel look, matte finish, clean paint layers, subtle cel misregistration, analog video texture, no oily or glossy look, no modern anime sheen, no oversized eyes, no soft glow, no 3d, no cgi, no photorealism, no digital painting look, no painterly brushwork, no thick paint, no heavy impasto, no soft focus, no depth of field.",
+  "artists": [
+    {"name": "Haruhiko Mikimoto", "work": {"en": "The Super Dimension Fortress Macross", "zh": "超时空要塞"} },
+    {"name": "Yoshiyuki Sadamoto", "work": {"en": "Neon Genesis Evangelion", "zh": "新世纪福音战士"} },
+    {"name": "Tsukasa Hojo", "work": {"en": "City Hunter", "zh": "城市猎人"} },
+    {"name": "Hiroyuki Kitazume", "work": {"en": "Mobile Suit Zeta Gundam", "zh": "机动战士Z高达"} },
+    {"name": "Masami Obari", "work": {"en": "Detonator Orgun", "zh": "破坏者奥钢"} },
+    {"name": "Yasuhiro Nightow", "work": {"en": "Trigun", "zh": "枪神"} },
+    {"name": "Mamoru Nagano", "work": {"en": "The Five Star Stories", "zh": "五星物语"} },
+    {"name": "Rei Hiroe", "work": {"en": "Burakku Ragūn", "zh": "黑礁"} },
+    {"name": "Katsuhiro Otomo", "work": {"en": "Akira", "zh": "阿基拉"} }
+
+    
+  ]
+}

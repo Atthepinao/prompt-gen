@@ -652,6 +652,36 @@ def _variant_descriptor(variation: Optional[str]) -> str:
     return ""
 
 
+# --- OpenAI / GPT-image prose vocabulary -------------------------------------
+# These mirror the variant / subcategory data above but in plain prose, for the
+# labeled-section GPT-image template (no FORBIDDEN/LOCKED uppercase blocks).
+
+_OPENAI_VARIANT_ADJ = {
+    "Standard":    "production-model",
+    "Space-Type":  "space-type",
+    "Sky-Type":    "atmospheric-type",
+    "Ground-Type": "ground-type",
+    "Prototype":   "prototype",
+}
+
+_OPENAI_VARIANT_FEELING = {
+    "Standard":    "clean finished production-model feeling, no unpainted panels",
+    "Space-Type":  "space-type configuration feeling, extra vernier thruster clusters on the limbs and back, no atmospheric stabilizers",
+    "Sky-Type":    "atmospheric high-altitude feeling, aerodynamic stabilizer fins and chest intake ducts, swept shoulder fairings",
+    "Ground-Type": "ground-combat feeling, heavy reinforced leg armor and exposed cooling intakes, no large vernier thrusters",
+    "Prototype":   "prototype test-unit feeling, exposed but believable joint mechanics, partially unpainted primer panels",
+}
+
+_OPENAI_SUBCAT_SILHOUETTE_ADJ = {
+    "Generalist":    "balanced, clean, readable",
+    "Heavy Assault": "heavy, broad-shouldered, planted",
+    "Sniper-Recon":  "tall, lean, forward-leaning",
+    "High-Mobility": "lean, slender, agile",
+    "Worker":        "stocky, industrial, utilitarian",
+    "Variable":      "convertible, aerodynamic, streamlined",
+}
+
+
 class MechaGenerator(pg.ComponentGenerator):
     def __init__(
         self,
@@ -806,7 +836,129 @@ class MechaGenerator(pg.ComponentGenerator):
         )
         return "\n".join(lines)
 
-    def generate_full_prompt(self) -> str:
+    # --- OpenAI / GPT-image colour resolution ---
+    def _openai_palette(self) -> tuple:
+        """Returns (color_word, subject_colors, palette_line) for the GPT-image
+        template. Mecha has no per-unit colour picker, so the default is the
+        validated white-dominant prototype palette; manufacturer or explicit
+        colours override it."""
+        if self.manufacturer_data and self.manufacturer_data.get("color_palette"):
+            pal = self.manufacturer_data["color_palette"].rstrip(".")
+            color_word = pal.split(",")[0].split()[0].lower()
+            subject = (f"armored in {pal.lower()}, with small restrained accent "
+                       "colors on sensor details and dark graphite joints")
+            return color_word, subject, pal
+        if self.primary_color and self.secondary_color:
+            p, s = self.primary_color, self.secondary_color
+            subject = (f"{p} primary armor, subtle {s} panel breaks, small restrained "
+                       "accent colors on sensor details and dark graphite joints")
+            palette_line = (f"{p} dominant, {s} secondary panels, dark graphite inner "
+                            "frame, small muted accent sensors only")
+            return p.lower(), subject, palette_line
+        subject = ("white primary armor, subtle cool gray panel breaks, small restrained "
+                   "accent colors such as muted red sensor details and dark graphite joints")
+        palette_line = ("white dominant, cool gray mechanical joints, dark graphite inner "
+                        "frame, small muted red or amber sensors only")
+        return "white", subject, palette_line
+
+    def _assemble_openai(self) -> str:
+        """Labeled-section prose prompt for GPT-image / reasoning-enhanced models."""
+        spec = MECHA_SUBCATEGORIES.get(self.subcategory, MECHA_SUBCATEGORIES["Generalist"])
+        tier_adj = self.get_tier_data()["adjectives"][0]
+
+        variant = self.variation or "Standard"
+        variant_adj = _OPENAI_VARIANT_ADJ.get(variant, "production-model")
+        variant_feeling = _OPENAI_VARIANT_FEELING.get(variant, "")
+        sil_adj = _OPENAI_SUBCAT_SILHOUETTE_ADJ.get(self.subcategory, "clean, readable")
+
+        color_word, subject_colors, palette_line = self._openai_palette()
+
+        # Designer attribution / signature
+        if self.designers:
+            names = ", ".join(d["name"] for d in self.designers)
+            designer_phrase = f"the top mechanical designer {names}"
+            sigs = " ".join(d.get("signature", "").strip()
+                            for d in self.designers if d.get("signature")).strip()
+            designer_clause = (f", following the design vocabulary of {names}"
+                               + (f" ({sigs})" if sigs else ""))
+        else:
+            designer_phrase = "a top mechanical designer"
+            designer_clause = ""
+
+        # Subcategory silhouette + features (shared data layer)
+        silhouette = _pick_silhouette(spec)
+        pool = list(spec["features_pool"])
+        features = random.sample(pool, min(4, len(pool)))
+        feature_prose = "; ".join(features)
+
+        # Five control axes — prose only, no LOCKED/uppercase for OpenAI.
+        sensor_text = self._resolve_axis(self.sensor_module_key, SENSOR_MODULES_MAP, SENSOR_MODULES)
+        surface_text = self._resolve_axis(self.surface_treatment_key, SURFACE_TREATMENTS_MAP, SURFACE_TREATMENTS)
+        shoulder_text = self._resolve_axis(self.shoulder_form_key, SHOULDER_FORMS_MAP, SHOULDER_FORMS)
+        propulsion_text = self._resolve_axis(self.propulsion_style_key, PROPULSION_STYLES_MAP, PROPULSION_STYLES)
+        paint_text = self._resolve_axis(self.paint_scheme_key, PAINT_SCHEMES_MAP, PAINT_SCHEMES)
+
+        subject_axis = "; ".join(t for t in (sensor_text, shoulder_text, propulsion_text) if t)
+
+        subject_bits = [
+            "one original humanoid mecha, consistent design across all views",
+            subject_colors,
+            variant_feeling,
+            f"{'an' if tier_adj[:1].lower() in 'aeiou' else 'a'} {tier_adj} "
+            f"{spec['flavor']} with a {sil_adj} silhouette",
+            silhouette,
+            feature_prose,
+        ]
+        if subject_axis:
+            subject_bits.append(subject_axis)
+        if designer_clause:
+            subject_bits.append(designer_clause.lstrip(", "))
+        subject_line = "; ".join(b for b in subject_bits if b)
+
+        palette_full = palette_line
+        if paint_text:
+            palette_full = f"{palette_line}; paint applied as {paint_text}"
+
+        materials = ("painted anime armor plating, fine panel lines, vents, verniers, "
+                     "cables, sensor blocks, mechanical knees and elbows, plausible layered armor")
+        if surface_text:
+            materials = f"{materials}; {surface_text}"
+
+        constraints = (
+            "four views must describe the same design; pure white background; no logos; "
+            "no readable text; no pilot; no weapons held in hands; no external equipment "
+            "or detachable backpacks; bare-frame state only; no scenery; no watermark; "
+            f"keep the silhouette {sil_adj} and clearly readable; avoid bulky superhero "
+            "proportions, modern glossy 3D render style, excessive greebles, battle damage, "
+            "and painterly backgrounds"
+        )
+
+        sections = [
+            "Use case: stylized-concept",
+            "Asset type: mecha concept art asset sheet, preview image",
+            (f"Primary request: Design a {color_word}-dominant {variant_adj} mecha with a "
+             f"{sil_adj} silhouette, as if created by {designer_phrase} for a 1990s "
+             "Japanese OVA animation."),
+            "Scene/backdrop: pure white seamless background, no environment, no shadows, no gradients.",
+            f"Subject: {subject_line}.",
+            ("Style/medium: anime cel hand-painted mechanical design sheet, 1990s OVA look, "
+             "clean ink lines, limited color palette, flat cel shading, hand-drawn production "
+             "art texture, crisp but not photorealistic."),
+            ("Composition/framing: a clean 2x2 four-panel layout on one image, equal spacing "
+             "and scale, showing the same mecha in front view, side view, top view, and "
+             "orthographic three-quarter view; each view fully visible, centered, with generous "
+             "white margin; technical model-sheet clarity without written labels."),
+            "Lighting/mood: neutral studio-like cel shading, minimal highlights, no dramatic lighting.",
+            f"Color palette: {palette_full}.",
+            f"Materials/textures: {materials}.",
+            f"Constraints: {constraints}.",
+        ]
+        return "\n".join(sections) + "\n"
+
+    def generate_full_prompt(self, backend: str = "gemini") -> str:
+        if backend == "openai":
+            return self._assemble_openai()
+
         tier_adj = self.get_tier_data()["adjectives"][0]
         spec = MECHA_SUBCATEGORIES.get(self.subcategory, MECHA_SUBCATEGORIES["Generalist"])
         flavor = spec["flavor"]
@@ -920,6 +1072,7 @@ def generate_mecha_prompt_by_strings(
     shoulder_form_key: Optional[str] = None,
     propulsion_style_key: Optional[str] = None,
     paint_scheme_key: Optional[str] = None,
+    backend: str = "gemini",
 ) -> str:
     try:
         tier = pg.Tier[tier_name]
@@ -953,7 +1106,7 @@ def generate_mecha_prompt_by_strings(
         propulsion_style_key=propulsion_style_key,
         paint_scheme_key=paint_scheme_key,
     )
-    return gen.generate_full_prompt()
+    return gen.generate_full_prompt(backend=backend)
 
 
 if __name__ == "__main__":

@@ -147,6 +147,7 @@ class MechaTab(BaseTab):
             shoulder_form_key=axis_keys[2],
             propulsion_style_key=axis_keys[3],
             paint_scheme_key=axis_keys[4],
+            backend=self.window.active_backend,
         )
         self.set_output(prompt)
 

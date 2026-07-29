@@ -21,39 +21,82 @@
       "carries_mecha": false
     },
     {
-      "id": "corvette",
-      "name": "Corvette",
-      "name_zh": "护卫舰",
-      "role": "small fast multi-role escort space warship",
-      "unique_anchor": "narrow gun-barrel hull profile — overall length-to-width ratio is extreme, like a single rifle barrel stretched in space, with a single continuous dorsal gun spine running nose-to-tail",
-      "silhouette": "elongated narrow armored hull oriented along its long axis, blocky forward command block stepped up from the dorsal spine, armored aft engine block with thruster bells partially recessed into the armor",
+      "id": "adventurer",
+      "name": "Adventurer Tramp",
+      "name_zh": "冒险船",
+      "role": "small private long-range adventurer / tramp / privateer ship — civilian-registered hull operating at the edge of the law, the kind of small crewed ship a freelance crew would call home",
+      "unique_anchor": "compact roughly 30–60 meter civilian hull with a clearly visible single bubble or stepped cockpit / bridge canopy at the dorsal forward position, an obvious main hatch / cargo ramp on the underside or stern, and an oversized rear engine block that is dramatically larger than the rest of the vessel — silhouette reads as a personal lived-in starship, NOT a warship and NOT a fighter",
+      "silhouette": "stubby civilian hull, dorsal forward bridge bubble, oversized rear engine block hanging off the stern, side-mounted folding landing gear bays, asymmetric bolt-on equipment panels giving the impression of a vessel maintained by its crew rather than a navy",
       "features_pool": [
-        "low-profile stepped armored command block forward, integrated into the dorsal hull",
-        "dorsal turret battery row with cylindrical cannon turrets",
-        "ventral sensor blister",
-        "armored aft engine block with quad main thruster bells partially recessed into the armor plate",
-        "side-mounted reaction-control vernier clusters",
-        "amidships antenna mast with multiple radar dishes",
-        "armored bow with reinforced ram prow"
+        "dorsal forward bridge canopy or stepped command bubble",
+        "oversized rear engine block with two or three large thruster bells, dramatically scaled up relative to the hull",
+        "underside cargo ramp or main personnel hatch",
+        "folding landing gear bays at the flanks and belly",
+        "small forward sensor dish or whip antenna cluster on the dorsal spine",
+        "asymmetric bolt-on equipment pods, fuel tanks or salvage rigs welded onto the hull",
+        "civilian registration number stenciled across the flank in bold characters",
+        "hand-painted ship name banner along the dorsal armor",
+        "small crew-served defensive turret in a chin or dorsal blister"
       ],
-      "scale_note": "small space warship, hundred-meter class",
+      "scale_note": "small civilian craft — roughly 30 to 60 meters long, comparable in scale to a private yacht or small cargo runner",
+      "carries_mecha": false
+    },
+    {
+      "id": "patrol_boat",
+      "name": "Patrol Boat",
+      "name_zh": "巡逻艇",
+      "role": "small fast multi-role patrol gunboat — naval police / customs / picket vessel",
+      "unique_anchor": "narrow gunship hull with a single continuous dorsal gun spine running nose-to-tail, a stepped armored bridge block tucked aft on the dorsal spine, and a chin-mounted twin gun pod under the bow — silhouette reads as a 'gun barrel with a small crew compartment bolted on'",
+      "silhouette": "elongated narrow armored hull oriented along its long axis, low-profile stepped armored bridge block aft of the dorsal gun spine, chin-mounted twin gun pod under the bow, armored aft engine block with twin large thruster bells partially recessed into the armor",
+      "features_pool": [
+        "single continuous dorsal gun spine running nose-to-tail",
+        "low-profile stepped armored command block tucked aft on the dorsal spine",
+        "chin-mounted twin auto-cannon pod under the bow",
+        "ventral sensor blister with a small radar dish",
+        "armored aft engine block with twin main thruster bells partially recessed into the armor plate",
+        "side-mounted reaction-control vernier clusters",
+        "stenciled patrol unit number painted in oversized characters across the flank",
+        "amidships short whip antenna cluster"
+      ],
+      "scale_note": "small space gunship, roughly 80 to 150 meters long",
+      "carries_mecha": false
+    },
+    {
+      "id": "destroyer",
+      "name": "Destroyer",
+      "name_zh": "驱逐舰",
+      "role": "fast missile-heavy fleet escort destroyer — frontline screen against incoming small craft and ordnance",
+      "unique_anchor": "long slender 'flying spear' hull with paired vertical missile silo banks set into the dorsal spine fore and aft of an amidships bridge block, prominent flank-mounted point-defense turret rings, and an aggressive needle-pointed bow — silhouette reads as 'long, thin, bristling with missile cells'",
+      "silhouette": "long slender armored hull with a sharply pointed needle bow, twin dorsal vertical missile silo banks fore and aft of the bridge block, flank rings of small point-defense turrets, low amidships armored bridge block, paired armored aft engine pods",
+      "features_pool": [
+        "needle-pointed armored bow with reinforced impact prow",
+        "twin dorsal vertical missile silo banks fore and aft of the bridge",
+        "flank rings of small point-defense turrets",
+        "low-profile amidships stepped armored bridge with horizontal viewport bands",
+        "paired armored aft engine pods, each housing two large thruster bells partially recessed into the armor",
+        "ventral torpedo launch tube cluster",
+        "amidships sensor mast with stacked phased-array antenna panels",
+        "stenciled hull pennant number painted in oversized characters at the bow"
+      ],
+      "scale_note": "fast medium space warship, roughly 200 to 300 meters long",
       "carries_mecha": false
     },
     {
       "id": "frigate",
       "name": "Frigate",
       "name_zh": "巡防舰",
-      "role": "medium escort and patrol space warship",
-      "unique_anchor": "wedge-shaped armored bow projecting aggressively forward like a chisel point, with prominent flank sponsons bulging outboard from the midsection and a clearly raised aft superstructure block — the silhouette reads as 'arrowhead with shoulders'",
+      "role": "medium escort and patrol space warship — workhorse of the fleet's outer screen",
+      "unique_anchor": "wedge-shaped armored bow projecting aggressively forward like a chisel point, with prominent flank sponsons bulging outboard from the midsection and a clearly raised aft superstructure block — silhouette reads as 'arrowhead with shoulders'",
       "silhouette": "wedge-shaped armored hull projecting forward, raised aft superstructure block, prominent armored bow ram prow, twin side hangar sponsons or flank turret sponsons",
       "features_pool": [
-        "armored wedge-shaped bow with ram prow",
+        "armored wedge-shaped bow with reinforced ram prow",
         "twin-tier aft superstructure block with horizontal viewport bands",
         "side sponson turret mounts running along the flanks",
         "armored aft engine block housing four to six main drive bells partially recessed into the armor",
         "communications mast cluster on the dorsal spine",
         "ventral missile silo grid line",
-        "low-profile armored command block with horizontal viewport slits"
+        "low-profile armored command block with horizontal viewport slits",
+        "boat-bay hatches set into the flanks for small craft recovery"
       ],
       "scale_note": "medium space warship, several-hundred-meter class",
       "carries_mecha": false
@@ -72,7 +115,8 @@
         "massive armored aft engine block with six or more main thruster bells partially recessed into a thick armored mounting plate",
         "dorsal radar dome cluster",
         "armor belt with riveted plating along the flanks",
-        "secondary anti-fighter turret rings ringing the upper hull"
+        "secondary anti-fighter turret rings ringing the upper hull",
+        "boat-bay hatches set into the flanks for shuttle and rescue craft"
       ],
       "scale_note": "large space warship, kilometer-scale capital vessel",
       "carries_mecha": false
@@ -91,16 +135,37 @@
         "rows of secondary anti-fighter turrets along the flanks",
         "armored bow with massive ram prow and forward-mounted prow main cannon",
         "massive armored aft mega-engine block with eight or more main thruster bells partially recessed into a thick armored mounting plate",
-        "fleet command antenna mast cluster"
+        "fleet command antenna mast cluster",
+        "armored boat-bay sponsons for the admiral's launch and shuttle craft"
       ],
       "scale_note": "flagship class, multi-kilometer space dreadnought",
       "carries_mecha": false
     },
     {
-      "id": "carrier",
-      "name": "Carrier",
-      "name_zh": "母舰",
-      "role": "modular bipedal-machine carrier — a space WARSHIP that carries and launches piloted bipedal combat machines via forward-firing catapults, NOT a real-world ocean-going aircraft carrier",
+      "id": "strike_carrier",
+      "name": "Strike Carrier",
+      "name_zh": "突击母舰",
+      "role": "compact fast bipedal-machine carrier — small-scale strike-group flagship that carries and launches piloted bipedal combat machines through twin lateral catapult sponsons, NOT a real-world ocean-going aircraft carrier",
+      "unique_anchor": "twin prominent lateral hangar sponsons running parallel along the flanks, each terminating in a forward-firing catapult exit — the sponsons are clearly readable as a defining feature, more compact than a fleet carrier but unmistakably a mobile-machine carrier",
+      "silhouette": "compact armored hull with twin prominent lateral hangar sponsons running along the flanks, each ending in a forward-firing catapult exit, low-profile stepped dorsal command block, armored aft engine block with recessed thruster bells",
+      "features_pool": [
+        "twin lateral hangar sponsons running parallel along the flanks, each with its own forward catapult exit",
+        "low-profile stepped armored command block integrated flush into the dorsal spine, with horizontal viewport bands",
+        "dorsal beam-cannon turret pair amidships for self-defense",
+        "armored aft engine block with four to six large thruster bells partially recessed into the armor",
+        "secondary missile launcher recesses along the flanks",
+        "antenna cluster and recessed conduit greebles set into the upper hull armor",
+        "small auxiliary boat-bay door set into the ventral hull",
+        "stenciled carrier hull number painted in oversized characters at the bow"
+      ],
+      "scale_note": "compact space carrier, roughly 400 to 700 meters long, designed to deploy bipedal combat machines through forward-firing lateral catapults",
+      "carries_mecha": true
+    },
+    {
+      "id": "fleet_carrier",
+      "name": "Fleet Carrier",
+      "name_zh": "舰队母舰",
+      "role": "fleet-scale modular bipedal-machine carrier — a space WARSHIP that carries and launches piloted bipedal combat machines via a centerline forward-firing catapult tunnel, NOT a real-world ocean-going aircraft carrier",
       "unique_anchor": "vertically-thick armored hull whose forward third splits into a wide longitudinal launch channel running fore-to-aft along the centerline, exiting face-first out the bow opening — the channel is the single defining visual feature",
       "silhouette": "vertically-thick block-shaped armored hull with a longitudinal forward launch channel along the centerline, two outboard hangar sponsons running parallel along the flanks, low-profile dorsal command block flush with the hull, armored aft engine block with thruster bells recessed into the armor",
       "features_pool": [
@@ -114,45 +179,67 @@
         "secondary missile launcher recesses along the flanks",
         "antenna cluster and recessed conduit greebles set into the upper hull armor"
       ],
-      "scale_note": "large space warship carrier class, kilometer-scale, designed to deploy bipedal combat machines via forward-firing bow catapults",
+      "scale_note": "large space carrier, kilometer-scale, designed to deploy bipedal combat machines via forward-firing bow and lateral catapults",
       "carries_mecha": true
     },
     {
-      "id": "freighter",
-      "name": "Freighter",
-      "name_zh": "货船",
-      "role": "civilian heavy cargo space hauler",
+      "id": "survey",
+      "name": "Survey Ship",
+      "name_zh": "科考船",
+      "role": "long-range civilian / scientific survey, deep-space exploration and first-contact research vessel",
+      "unique_anchor": "oversized forward sensor-array module dwarfing the rest of the hull — a clustered bouquet of parabolic dishes, phased-array panels and probe launch tubes mounted on a forward boom that visually outweighs the modest crew habitat amidships, with a slim modular hull running back to a small efficient engine block",
+      "silhouette": "slim civilian hull with a dramatically oversized forward sensor cluster, a modest cylindrical or hexagonal crew habitat block amidships, modular science laboratory pods strapped along the spine, slim aft engine block",
+      "features_pool": [
+        "oversized forward sensor cluster — bouquet of parabolic dishes, phased-array panels and probe launch tubes mounted on a forward boom",
+        "cylindrical or hexagonal crew habitat block amidships with porthole windows",
+        "modular science laboratory pods strapped along the dorsal spine",
+        "deployable folding solar panels or radiator fins along the flanks",
+        "slim aft engine block with two large efficient thruster bells",
+        "small probe launch racks integrated into the dorsal hull",
+        "slow-rotation gravity ring section amidships",
+        "civilian survey hull number and academy emblem stenciled across the flank"
+      ],
+      "scale_note": "medium civilian science vessel, roughly 200 to 400 meters long",
+      "carries_mecha": false
+    },
+    {
+      "id": "bulk_freighter",
+      "name": "Bulk Freighter",
+      "name_zh": "重型货船",
+      "role": "civilian heavy bulk cargo space hauler",
       "unique_anchor": "dorsal spine dominated by a long stack of modular standardized shipping container racks — the cargo containers are the single dominant visual mass, dwarfing the small forward crew habitat and the rear engine block",
       "silhouette": "blocky utilitarian hull with modular cargo container racks stacked along the spine, small offset forward crew habitat module, oversized aft industrial engine block with exposed thruster bells",
       "features_pool": [
         "modular cargo container racks stacked along the spine",
         "small offset crew habitat module forward",
         "oversized industrial aft engine block with multiple exposed thruster bells",
-        "exposed structural truss frame",
+        "exposed structural truss frame between cargo modules",
         "loading crane arms folded against the hull",
-        "external piping and conduit runs",
-        "civilian hazard stripe markings and corporate livery"
+        "external piping and conduit runs along the spine",
+        "civilian hazard stripe markings and corporate livery panels",
+        "side-mounted tug docking collars for shipyard handling"
       ],
-      "scale_note": "large civilian space freighter, freight hauler class",
+      "scale_note": "large civilian space freighter, freight hauler class, roughly 600 to 1200 meters long",
       "carries_mecha": false
     },
     {
-      "id": "industrial",
-      "name": "Mining / Industrial",
-      "name_zh": "工业船",
-      "role": "asteroid mining and industrial work space vessel",
-      "unique_anchor": "massive asymmetric forward ore-processing maw or rotating grinder intake dominating the bow, flanked by exposed articulated industrial work arms — function-driven asymmetry is the defining read",
-      "silhouette": "asymmetric utilitarian rig, large forward processing maw or grinder intake, exposed articulated work arms, attached refinery tanks and silos, exposed rear thruster cluster",
+      "id": "city_ship",
+      "name": "Mobile Colony",
+      "name_zh": "移动殖民舰",
+      "role": "kilometer-scale mobile colony ship — a self-sustaining space-borne city housing tens of thousands of civilians, with visible city blocks, civilian infrastructure and integrated military escort facilities",
+      "unique_anchor": "a colossal hull whose dorsal surface is unmistakably covered with rows of small civilian high-rise blocks, parks, transit lines and atmospheric dome structures — the ship reads simultaneously as a warship-scale armored vessel AND as a populated city, with a tall central spire or arcology tower rising from amidships",
+      "silhouette": "colossal flat-topped armored hull with rows of civilian high-rise blocks across the dorsal surface, a tall central arcology spire amidships, transparent atmospheric dome sections, integrated armored flanks with defensive turret rings, massive armored aft engine cluster with multiple recessed thruster bells",
       "features_pool": [
-        "massive forward ore-processing intake jaw or rotating grinder maw",
-        "articulated industrial work arms with grippers",
-        "external refinery tanks and silos bolted to the hull",
-        "exposed pipework and conveyor runs",
-        "asymmetric utility platforms welded onto the hull",
-        "heavy reinforced collision bumper bow",
-        "rotating sorting drum amidships"
+        "rows of small civilian high-rise blocks and arcology buildings across the dorsal surface",
+        "tall central command and habitation spire rising amidships",
+        "transparent atmospheric dome sections housing parks and gardens",
+        "integrated armored flank with defensive turret rings",
+        "massive armored aft engine cluster with multiple thruster bells partially recessed into the armor",
+        "ventral docking hangars for civilian shuttles and freight craft",
+        "stadium-scale parade ground and landing platform on the dorsal forward deck",
+        "stenciled colony fleet identification across the armored bow"
       ],
-      "scale_note": "medium industrial space vessel, function over form",
+      "scale_note": "kilometer-scale civilian colony vessel, multi-kilometer length, housing tens of thousands of inhabitants",
       "carries_mecha": false
     }
   ],
@@ -167,43 +254,55 @@
       "id": "Block-II Refit",
       "name_en": "Block-II Refit",
       "name_zh": "Block-II 改装",
-      "descriptor": "STRUCTURAL VARIANT: Block-II refit — additional bolted-on armor panels, upgraded sensor mast, visible mid-life modernization seams."
+      "descriptor": "The vessel is shown in its Block-II mid-life refit configuration, with additional bolted-on armor panels along the flanks, an upgraded sensor mast, and clearly visible modernization seams between the original and refit panel courses."
     },
     {
       "id": "Civilian Variant",
       "name_en": "Civilian Variant",
       "name_zh": "民用改型",
-      "descriptor": "STRUCTURAL VARIANT: Civilian conversion — turrets removed or faired over, additional cargo blisters and viewport rows added, civilian livery panel layout."
+      "descriptor": "The vessel is shown in a civilian conversion: turrets removed or faired over with smooth panel covers, additional cargo blisters and viewport rows added along the flanks, and a civilian livery panel layout replacing the original military markings."
     },
     {
       "id": "Pirate Conversion",
       "name_en": "Pirate Conversion",
       "name_zh": "海盗改装",
-      "descriptor": "STRUCTURAL VARIANT: Pirate conversion — mismatched salvaged armor patches, jury-rigged extra weapon mounts welded on, asymmetric bolt-on hull modifications and exposed cabling."
+      "descriptor": "The vessel is shown in a pirate conversion: mismatched salvaged armor patches over the hull, jury-rigged extra weapon mounts welded onto the dorsal spine, asymmetric bolt-on hull modifications and exposed bundled cabling running along the flanks."
     },
     {
       "id": "Stealth Variant",
       "name_en": "Stealth Variant",
       "name_zh": "隐身型",
-      "descriptor": "STRUCTURAL VARIANT: Stealth configuration — flush faceted radar-absorbent paneling, recessed vents, no protruding antennas, minimal external greebles."
+      "descriptor": "The vessel is shown in a stealth configuration: flush faceted radar-absorbent paneling replacing the standard armor courses, recessed vents flush with the hull, no protruding antennas, and minimal external greebles, giving the silhouette a smoother and more angular read while keeping the same overall proportions."
     },
     {
       "id": "Prototype",
       "name_en": "Prototype",
       "name_zh": "原型机",
-      "descriptor": "STRUCTURAL VARIANT: Prototype — exposed test instrumentation harnesses, unpainted primer-grey panels alongside finished sections, hand-stenciled trial unit markings, visible experimental sensor pods bolted to non-standard locations."
+      "descriptor": "The vessel is shown as a prototype trial unit: exposed test instrumentation harnesses running along the flanks, unpainted primer-grey panels alongside finished sections, hand-stenciled trial unit markings on the bow, and visible experimental sensor pods bolted to non-standard locations."
     },
     {
       "id": "Ceremonial Flagship",
       "name_en": "Ceremonial Flagship",
       "name_zh": "仪典旗舰",
-      "descriptor": "STRUCTURAL VARIANT: Ceremonial flagship livery — ornate dress paneling and gilded trim along the armor belt, oversized fleet command antenna mast, ceremonial banners or insignia plates affixed to the dorsal hull, polished parade-ground finish on all visible surfaces."
+      "descriptor": "The vessel is shown in ceremonial flagship livery: ornate dress paneling and gilded trim along the armor belt, an oversized fleet command antenna mast, ceremonial banners or insignia plates affixed to the dorsal hull, and a polished parade-ground finish on all visible surfaces."
     },
     {
       "id": "Battle-Damaged",
       "name_en": "Battle-Damaged",
       "name_zh": "战损型",
-      "descriptor": "STRUCTURAL VARIANT: Heavily battle-damaged — torn armor plating with jagged edges, exposed internal frame structure in damaged sections, scorched and blackened paint around impact zones, missing turrets or antenna stubs, makeshift welded patch repairs over hull breaches."
+      "descriptor": "The vessel is shown heavily battle-damaged: torn armor plating with jagged edges, exposed internal frame structure in the damaged sections, scorched and blackened paint around impact zones, missing turrets or antenna stubs, and makeshift welded patch repairs over hull breaches."
+    },
+    {
+      "id": "Veteran Ace Markings",
+      "name_en": "Veteran Ace Markings",
+      "name_zh": "王牌涂装",
+      "descriptor": "The vessel is shown in veteran ace markings: a distinctive personal paint scheme replacing standard fleet livery, a row of small painted kill-marks stenciled across the flank near the bridge, a custom hand-painted unit emblem on the bow, and one or two oversized stylized accent stripes wrapping the hull, giving the impression of a lived-in personal hero ship."
+    },
+    {
+      "id": "Captured Refit",
+      "name_en": "Captured Refit",
+      "name_zh": "缴获改装",
+      "descriptor": "The vessel is shown as a captured hull repurposed by a different faction: the original livery is partially overpainted with mismatched new colors, original markings are visible faintly bleeding through under the new paint, replacement antennas and weapon mounts of a clearly different manufacturing style are bolted on at non-original positions, and welded patch plates cover original panel cutouts."
     }
   ]
 }
